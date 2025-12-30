@@ -2601,15 +2601,23 @@
         }
 
         /* Coin Toss Modal */
+        #coinTossModal.open,
+        #nearestBullModal.open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2500;
+        }
+
         .coin-toss-content {
             position: relative;
             z-index: 10;
             text-align: center;
-            padding: var(--space-xl);
+            padding: var(--space-lg);
             background: var(--bg-secondary);
             border-radius: var(--radius-xl);
             max-width: 360px;
-            width: calc(100% - var(--space-md) * 2);
+            width: calc(100% - var(--space-lg) * 2);
             margin: var(--space-md);
             animation: scaleIn 0.4s ease;
         }
@@ -2789,18 +2797,25 @@
 
         .magnifier-info {
             position: absolute;
-            bottom: -30px;
+            bottom: -32px;
             left: 50%;
             transform: translateX(-50%);
             background: var(--bg-secondary);
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: var(--radius-md);
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.9rem;
+            font-weight: 700;
             white-space: nowrap;
-            color: var(--theme-primary);
-            border: 1px solid var(--theme-primary);
+            border: 2px solid currentColor;
+            transition: color 0.1s, border-color 0.1s;
         }
+
+        .magnifier-info.single { color: #f5f0dc; }
+        .magnifier-info.double { color: #208b3a; }
+        .magnifier-info.treble { color: #e23636; }
+        .magnifier-info.bull { color: #e23636; }
+        .magnifier-info.outer-bull { color: #208b3a; }
+        .magnifier-info.miss { color: var(--text-muted); }
 
         .magnifier-hint {
             position: absolute;
@@ -4171,8 +4186,8 @@
         const dx = x - cx, dy = y - cy;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist <= 7) return { value: 25, mult: 2, label: 'BULL', score: 50 }; // Bullseye
-        if (dist <= 16) return { value: 25, mult: 1, label: '25', score: 25 }; // Outer bull
+        if (dist <= 7) return { value: 25, mult: 2, label: 'BULL', score: 50, type: 'bull' }; // Bullseye
+        if (dist <= 16) return { value: 25, mult: 1, label: '25', score: 25, type: 'outer-bull' }; // Outer bull
         if (dist > 175) return null; // Outside board
 
         // Calculate angle and find segment
@@ -4183,15 +4198,17 @@
 
         // Determine multiplier by distance
         let mult = 1;
-        let prefix = '';
-        if (dist >= 160 && dist <= 170) { mult = 2; prefix = 'D'; } // Double
-        else if (dist >= 99 && dist <= 107) { mult = 3; prefix = 'T'; } // Triple
+        let prefix = 'S';
+        let type = 'single';
+        if (dist >= 160 && dist <= 170) { mult = 2; prefix = 'D'; type = 'double'; } // Double
+        else if (dist >= 99 && dist <= 107) { mult = 3; prefix = 'T'; type = 'treble'; } // Triple
 
         return {
             value,
             mult,
             label: prefix + value,
-            score: value * mult
+            score: value * mult,
+            type
         };
     }
 
@@ -4219,12 +4236,15 @@
         // Generate mini dartboard in magnifier
         renderMagnifierBoard(magnifierSvg, svgX, svgY);
 
-        // Update info label
+        // Update info label with color coding
         const hit = getHitFromCoords(svgX, svgY);
+        info.className = 'magnifier-info'; // Reset classes
         if (hit) {
-            info.textContent = `${hit.label} (${hit.score})`;
+            info.textContent = `${hit.label} = ${hit.score}`;
+            info.classList.add(hit.type);
         } else {
-            info.textContent = 'Miss';
+            info.textContent = 'MISS';
+            info.classList.add('miss');
         }
     }
 
