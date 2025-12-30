@@ -3276,7 +3276,7 @@
                             <div class="practice-icon">🔄</div>
                             <div class="practice-info">
                                 <div class="practice-title">AROUND THE CLOCK</div>
-                                <div class="practice-desc">Hit 1 through 20 in order</div>
+                                <div class="practice-desc">Hit 1-20, 25, then Bull</div>
                             </div>
                             <div class="practice-arrow">→</div>
                         </div>
@@ -5507,7 +5507,12 @@
                     app.practice.sequence = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => ({ value: n, mult: 3 }));
                     break;
                 case 'around':
-                    app.practice.sequence = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => ({ value: n, mult: 1 }));
+                    // 1-20, then 25 (outer bull), then Bull (bullseye)
+                    app.practice.sequence = [
+                        ...([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n => ({ value: n, mult: 1 }))),
+                        { value: 25, mult: 1 },  // Outer bull (25)
+                        { value: 25, mult: 2 }   // Bullseye (50)
+                    ];
                     break;
                 case 'checkout':
                     setRandomCheckout();
@@ -5616,9 +5621,15 @@
                 sub.textContent = `${p.index + 1} of 20`;
                 break;
             case 'around':
+                const aroundTarget = p.sequence[p.index];
                 label.textContent = 'Hit Number';
-                target.textContent = p.sequence[p.index].value;
-                sub.textContent = `${p.index + 1} of 20`;
+                // Show "25" or "Bull" for the final targets
+                if (aroundTarget.value === 25 && aroundTarget.mult === 2) {
+                    target.textContent = 'Bull';
+                } else {
+                    target.textContent = aroundTarget.value;
+                }
+                sub.textContent = `${p.index + 1} of 22`;
                 break;
             case 'checkout':
                 label.textContent = 'Remaining';
@@ -5673,7 +5684,25 @@
 
             case 'around':
                 const aroundTgt = p.sequence[p.index];
-                if (value === aroundTgt.value) {
+                // For 25 and Bull, need exact match (no carry)
+                if (aroundTgt.value === 25) {
+                    if (value === 25 && mult >= aroundTgt.mult) {
+                        p.hits++;
+                        // If targeting 25 and hit Bull, advance 2 (skip to complete)
+                        if (aroundTgt.mult === 1 && mult === 2) {
+                            p.index += 2;
+                            toast('BULL! +2 ✓', 'success');
+                        } else {
+                            p.index++;
+                            toast('HIT! ✓', 'success');
+                        }
+                        if (p.index >= p.sequence.length) {
+                            toast(`Complete! ${p.darts} darts`, 'success');
+                            setTimeout(() => startPractice(p.mode), 1500);
+                            return;
+                        }
+                    }
+                } else if (value === aroundTgt.value) {
                     p.hits++;
                     // Advance by multiplier (single=1, double=2, treble=3)
                     const advance = mult;
@@ -5783,8 +5812,13 @@
             case 'around':
                 title.textContent = 'AROUND THE CLOCK';
                 label.textContent = 'Hit This Number';
-                target.textContent = p.sequence[p.index].value;
-                sub.textContent = `${p.index + 1} of 20`;
+                const aroundTgt3 = p.sequence[p.index];
+                if (aroundTgt3.value === 25 && aroundTgt3.mult === 2) {
+                    target.textContent = 'Bull';
+                } else {
+                    target.textContent = aroundTgt3.value;
+                }
+                sub.textContent = `${p.index + 1} of 22`;
                 break;
             case 'checkout':
                 title.textContent = 'CHECKOUT PRACTICE';
@@ -5843,7 +5877,25 @@
 
             case 'around':
                 const aroundTgt2 = p.sequence[p.index];
-                if (value === aroundTgt2.value) {
+                // For 25 and Bull, need exact match (no carry)
+                if (aroundTgt2.value === 25) {
+                    if (value === 25 && mult >= aroundTgt2.mult) {
+                        p.hits++;
+                        // If targeting 25 and hit Bull, advance 2 (skip to complete)
+                        if (aroundTgt2.mult === 1 && mult === 2) {
+                            p.index += 2;
+                            toast('BULL! +2 ✓', 'success');
+                        } else {
+                            p.index++;
+                            toast('HIT! ✓', 'success');
+                        }
+                        if (p.index >= p.sequence.length) {
+                            toast(`Complete! ${p.darts} darts`, 'success');
+                            resetPractice();
+                            return;
+                        }
+                    }
+                } else if (value === aroundTgt2.value) {
                     p.hits++;
                     // Advance by multiplier (single=1, double=2, treble=3)
                     const advance2 = mult;
