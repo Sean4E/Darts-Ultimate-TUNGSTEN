@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deano-v4';
+const CACHE_NAME = 'deano-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS);
     })
   );
+  // Force immediate activation
   self.skipWaiting();
 });
 
@@ -27,15 +28,40 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Take control of all clients immediately
   self.clients.claim();
 });
 
-// Fetch with cache-first strategy
+// Fetch with network-first for HTML, cache-first for assets
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Network-first for HTML/navigation requests (ensures updates come through)
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Cache the fresh response
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, clone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Offline fallback to cache
+          return caches.match(event.request) || caches.match('./index.html');
+        })
+    );
+    return;
+  }
+
+  // Cache-first for static assets (icons, etc.)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
-        // Cache new requests
         if (response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -45,10 +71,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       });
     }).catch(() => {
-      // Offline fallback
-      if (event.request.mode === 'navigate') {
-        return caches.match('./index.html');
-      }
+      // Silent fail for assets
     })
   );
 });
