@@ -1,0 +1,39 @@
+{
+  "name": "Tungsten - Ultimate Darts Companion",
+  "short_name": "Tungsten",
+  "description": "The ultimate darts scoring app with practice modes, checkout charts, and detailed statistics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#ff6b35",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "games", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Quick 501",
+      "short_name": "Quick Game",
+      "description": "Start a quick 501 game",
+      "url": "/?action=quick-game"
+    },
+    {
+      "name": "Practice",
+      "short_name": "Practice",
+      "description": "Open practice modes",
+      "url": "/?screen=practice"
+    }
+  ]
+}
