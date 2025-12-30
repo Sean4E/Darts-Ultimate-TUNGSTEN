@@ -2763,6 +2763,60 @@
             width: 100%;
         }
 
+        /* Magnifier */
+        .magnifier-loupe {
+            position: fixed;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.8);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 9999;
+            background: #1a1a1a;
+            display: none;
+        }
+
+        .magnifier-loupe.active {
+            display: block;
+        }
+
+        .magnifier-loupe svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .magnifier-info {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            padding: 4px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            color: var(--theme-primary);
+            border: 1px solid var(--theme-primary);
+        }
+
+        .magnifier-hint {
+            position: absolute;
+            top: -24px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .dartboard-crosshair {
+            pointer-events: none;
+        }
+
         @media (min-width: 768px) {
             .game-over-content {
                 padding: var(--space-xl) calc(var(--space-xl) * 2);
@@ -3076,6 +3130,7 @@
                         
                         <div class="input-panel active" id="panel-board">
                             <div class="dartboard-wrap">
+                                <div class="magnifier-hint" id="magnifierHint">Hold Ctrl for magnifier</div>
                                 <button class="fullscreen-btn" id="fullscreenBtn">⛶</button>
                                 <div class="dartboard-container">
                                     <svg class="dartboard-svg" viewBox="0 0 400 400" id="dartboardSvg"></svg>
@@ -3465,6 +3520,12 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- Magnifier Loupe -->
+    <div class="magnifier-loupe" id="magnifierLoupe">
+        <svg viewBox="0 0 70 70" id="magnifierSvg"></svg>
+        <div class="magnifier-info" id="magnifierInfo">-</div>
+    </div>
+
     <!-- Coin Toss Modal -->
     <div class="modal" id="coinTossModal">
         <div class="modal-backdrop"></div>
@@ -3852,7 +3913,19 @@
         fsNumpadVal: '',
         turnCheckout: null, // Track the checkout route for current turn
         coinToss: null, // Track coin toss state
-        nearestBull: null // Track nearest bull state
+        nearestBull: null, // Track nearest bull state
+        magnifier: {
+            active: false,
+            x: 0,
+            y: 0,
+            svgX: 0,
+            svgY: 0,
+            targetSvg: null
+        },
+        ctrlPressed: false,
+        isMobile: false,
+        longPressTimer: null,
+        touchStartTime: 0
     };
 
     // ===== INIT =====
@@ -3862,10 +3935,14 @@
             applySettings();
             applySetup();
             renderPlayers();
+            initMagnifier();
             generateDartboard('dartboardSvg', handleGameThrow);
             generateDartboard('practiceBoardSvg', handlePracticeThrow);
             generateDartboard('fsBoardSvg', handleFsThrow);
             generateDartboard('bullBoardSvg', handleBullThrow);
+            setupDartboardMagnifier('dartboardSvg', handleGameThrow);
+            setupDartboardMagnifier('practiceBoardSvg', handlePracticeThrow);
+            setupDartboardMagnifier('fsBoardSvg', handleFsThrow);
             generateDartsGrid();
             generateQuickGrid();
             generateNumpad();
@@ -4055,6 +4132,240 @@
         const x4 = cx + r1 * Math.cos(rad2), y4 = cy + r1 * Math.sin(rad2);
         const d = `M${x1},${y1} L${x2},${y2} A${r2},${r2} 0 0 1 ${x3},${y3} L${x4},${y4} A${r1},${r1} 0 0 0 ${x1},${y1}Z`;
         return `<path d="${d}" class="dartboard-segment" fill="${fill}" data-value="${value}" data-mult="${mult}"/>`;
+    }
+
+    // ===== MAGNIFIER =====
+    function initMagnifier() {
+        app.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // Update hint text based on device
+        const hint = document.getElementById('magnifierHint');
+        if (hint) {
+            hint.textContent = app.isMobile ? 'Press & hold for magnifier' : 'Hold Ctrl for magnifier';
+        }
+
+        // Desktop: Listen for Ctrl key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Control') {
+                app.ctrlPressed = true;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'Control') {
+                app.ctrlPressed = false;
+                hideMagnifier();
+            }
+        });
+    }
+
+    function getSvgCoords(svg, clientX, clientY) {
+        if (!svg) return { x: 200, y: 200 };
+        const rect = svg.getBoundingClientRect();
+        const x = ((clientX - rect.left) / rect.width) * 400;
+        const y = ((clientY - rect.top) / rect.height) * 400;
+        return { x, y };
+    }
+
+    function getHitFromCoords(x, y) {
+        const cx = 200, cy = 200;
+        const dx = x - cx, dy = y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= 7) return { value: 25, mult: 2, label: 'BULL', score: 50 }; // Bullseye
+        if (dist <= 16) return { value: 25, mult: 1, label: '25', score: 25 }; // Outer bull
+        if (dist > 175) return null; // Outside board
+
+        // Calculate angle and find segment
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI + 99;
+        if (angle < 0) angle += 360;
+        const segmentIndex = Math.floor(angle / 18) % 20;
+        const value = BOARD_ORDER[segmentIndex];
+
+        // Determine multiplier by distance
+        let mult = 1;
+        let prefix = '';
+        if (dist >= 160 && dist <= 170) { mult = 2; prefix = 'D'; } // Double
+        else if (dist >= 99 && dist <= 107) { mult = 3; prefix = 'T'; } // Triple
+
+        return {
+            value,
+            mult,
+            label: prefix + value,
+            score: value * mult
+        };
+    }
+
+    function showMagnifier(screenX, screenY, svgX, svgY) {
+        const loupe = document.getElementById('magnifierLoupe');
+        const magnifierSvg = document.getElementById('magnifierSvg');
+        const info = document.getElementById('magnifierInfo');
+
+        app.magnifier.active = true;
+        app.magnifier.x = screenX;
+        app.magnifier.y = screenY;
+        app.magnifier.svgX = svgX;
+        app.magnifier.svgY = svgY;
+
+        // Position the loupe (offset up on mobile so finger doesn't block it)
+        const offsetY = app.isMobile ? -80 : 0;
+        loupe.style.left = (screenX - 70) + 'px';
+        loupe.style.top = (screenY - 70 + offsetY) + 'px';
+        loupe.classList.add('active');
+
+        // Update magnifier SVG viewBox to show zoomed area
+        const viewSize = 70;
+        magnifierSvg.setAttribute('viewBox', `${svgX - viewSize/2} ${svgY - viewSize/2} ${viewSize} ${viewSize}`);
+
+        // Generate mini dartboard in magnifier
+        renderMagnifierBoard(magnifierSvg, svgX, svgY);
+
+        // Update info label
+        const hit = getHitFromCoords(svgX, svgY);
+        if (hit) {
+            info.textContent = `${hit.label} (${hit.score})`;
+        } else {
+            info.textContent = 'Miss';
+        }
+    }
+
+    function hideMagnifier() {
+        app.magnifier.active = false;
+        document.getElementById('magnifierLoupe').classList.remove('active');
+    }
+
+    function renderMagnifierBoard(svg, crossX, crossY) {
+        const cx = 200, cy = 200;
+        const r = { dblOut: 170, dblIn: 160, trbOut: 107, trbIn: 99, bullOut: 16, bullIn: 7 };
+        const segAngle = 18;
+        const startAngle = -99;
+
+        let html = `<circle cx="${cx}" cy="${cy}" r="175" fill="#1a1a1a"/>`;
+
+        BOARD_ORDER.forEach((num, i) => {
+            const a1 = startAngle + i * segAngle;
+            const a2 = startAngle + (i + 1) * segAngle;
+            const isEven = i % 2 === 0;
+
+            html += miniSegment(cx, cy, r.dblIn, r.trbOut, a1, a2, isEven ? '#1a1a1a' : '#f5f0dc');
+            html += miniSegment(cx, cy, r.trbIn, r.bullOut, a1, a2, isEven ? '#1a1a1a' : '#f5f0dc');
+            html += miniSegment(cx, cy, r.dblOut, r.dblIn, a1, a2, isEven ? '#e23636' : '#208b3a');
+            html += miniSegment(cx, cy, r.trbOut, r.trbIn, a1, a2, isEven ? '#e23636' : '#208b3a');
+        });
+
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.bullOut}" fill="#208b3a"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.bullIn}" fill="#e23636"/>`;
+
+        // Wire rings
+        const wireColor = '#888';
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.dblOut}" fill="none" stroke="${wireColor}" stroke-width="0.5"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.dblIn}" fill="none" stroke="${wireColor}" stroke-width="0.5"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.trbOut}" fill="none" stroke="${wireColor}" stroke-width="0.5"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.trbIn}" fill="none" stroke="${wireColor}" stroke-width="0.5"/>`;
+        html += `<circle cx="${cx}" cy="${cy}" r="${r.bullOut}" fill="none" stroke="${wireColor}" stroke-width="0.5"/>`;
+
+        // Crosshair
+        html += `<line x1="${crossX - 12}" y1="${crossY}" x2="${crossX + 12}" y2="${crossY}" stroke="white" stroke-width="2"/>`;
+        html += `<line x1="${crossX}" y1="${crossY - 12}" x2="${crossX}" y2="${crossY + 12}" stroke="white" stroke-width="2"/>`;
+        html += `<circle cx="${crossX}" cy="${crossY}" r="4" fill="var(--theme-primary)" stroke="white" stroke-width="1"/>`;
+
+        svg.innerHTML = html;
+    }
+
+    function miniSegment(cx, cy, r1, r2, a1, a2, fill) {
+        const rad1 = a1 * Math.PI / 180;
+        const rad2 = a2 * Math.PI / 180;
+        const x1 = cx + r1 * Math.cos(rad1), y1 = cy + r1 * Math.sin(rad1);
+        const x2 = cx + r2 * Math.cos(rad1), y2 = cy + r2 * Math.sin(rad1);
+        const x3 = cx + r2 * Math.cos(rad2), y3 = cy + r2 * Math.sin(rad2);
+        const x4 = cx + r1 * Math.cos(rad2), y4 = cy + r1 * Math.sin(rad2);
+        const d = `M${x1},${y1} L${x2},${y2} A${r2},${r2} 0 0 1 ${x3},${y3} L${x4},${y4} A${r1},${r1} 0 0 0 ${x1},${y1}Z`;
+        return `<path d="${d}" fill="${fill}" stroke="#333" stroke-width="0.3"/>`;
+    }
+
+    function setupDartboardMagnifier(svgId, hitCallback) {
+        const svg = document.getElementById(svgId);
+        if (!svg) return;
+
+        // Mouse move for desktop magnifier (Ctrl held)
+        svg.addEventListener('mousemove', (e) => {
+            if (app.ctrlPressed) {
+                const { x, y } = getSvgCoords(svg, e.clientX, e.clientY);
+                showMagnifier(e.clientX, e.clientY, x, y);
+                app.magnifier.targetSvg = svg;
+                e.preventDefault();
+            }
+        });
+
+        // Mouse leave - hide magnifier
+        svg.addEventListener('mouseleave', () => {
+            if (app.magnifier.active && !app.isMobile) {
+                hideMagnifier();
+            }
+        });
+
+        // Click with magnifier active - use magnifier coords
+        svg.addEventListener('click', (e) => {
+            if (app.magnifier.active && app.ctrlPressed) {
+                const hit = getHitFromCoords(app.magnifier.svgX, app.magnifier.svgY);
+                if (hit) {
+                    // Create a fake segment element with the data attributes
+                    const fakeSeg = { dataset: { value: hit.value, mult: hit.mult } };
+                    hitCallback(fakeSeg);
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true); // Use capture to intercept before segment click
+
+        // Touch start - start long press timer
+        svg.addEventListener('touchstart', (e) => {
+            app.touchStartTime = Date.now();
+            if (app.isMobile) {
+                const touch = e.touches[0];
+                app.longPressTimer = setTimeout(() => {
+                    const { x, y } = getSvgCoords(svg, touch.clientX, touch.clientY);
+                    showMagnifier(touch.clientX, touch.clientY, x, y);
+                    app.magnifier.targetSvg = svg;
+                    haptic();
+                }, 300);
+            }
+        }, { passive: true });
+
+        // Touch move - update magnifier or cancel long press
+        svg.addEventListener('touchmove', (e) => {
+            if (app.longPressTimer && !app.magnifier.active) {
+                clearTimeout(app.longPressTimer);
+                app.longPressTimer = null;
+            }
+            if (app.magnifier.active && app.isMobile) {
+                const touch = e.touches[0];
+                const { x, y } = getSvgCoords(svg, touch.clientX, touch.clientY);
+                showMagnifier(touch.clientX, touch.clientY, x, y);
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Touch end - either hit with magnifier or normal tap
+        svg.addEventListener('touchend', (e) => {
+            if (app.longPressTimer) {
+                clearTimeout(app.longPressTimer);
+                app.longPressTimer = null;
+            }
+
+            const touchDuration = Date.now() - app.touchStartTime;
+
+            if (app.magnifier.active) {
+                // Magnifier was active - hit where the crosshair is
+                const hit = getHitFromCoords(app.magnifier.svgX, app.magnifier.svgY);
+                if (hit) {
+                    const fakeSeg = { dataset: { value: hit.value, mult: hit.mult } };
+                    hitCallback(fakeSeg);
+                }
+                hideMagnifier();
+                e.preventDefault();
+            }
+            // If it was a quick tap (< 300ms), let the normal click handler work
+        });
     }
 
     // ===== INPUT GRIDS =====
