@@ -2600,6 +2600,169 @@
             justify-content: center;
         }
 
+        /* Coin Toss Modal */
+        .coin-toss-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: var(--space-xl);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            max-width: 360px;
+            width: calc(100% - var(--space-md) * 2);
+            margin: var(--space-md);
+            animation: scaleIn 0.4s ease;
+        }
+
+        .coin-container {
+            perspective: 1000px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: var(--space-lg) 0;
+        }
+
+        .coin {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+        }
+
+        .coin.flipping {
+            animation: coinFlip 2s ease-out forwards;
+        }
+
+        .coin.flipping.to-tails {
+            animation: coinFlipTails 2s ease-out forwards;
+        }
+
+        @keyframes coinFlip {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(1800deg); }
+        }
+
+        @keyframes coinFlipTails {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(1980deg); }
+        }
+
+        .coin-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            backface-visibility: hidden;
+            border: 4px solid rgba(255,255,255,0.2);
+        }
+
+        .coin-heads {
+            background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+            color: white;
+        }
+
+        .coin-tails {
+            background: linear-gradient(135deg, var(--theme-secondary), var(--theme-primary));
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .coin-result {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--theme-primary);
+            min-height: 2rem;
+            margin-bottom: var(--space-sm);
+        }
+
+        .coin-winner {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            min-height: 1.5rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .coin-actions {
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .coin-start-btn {
+            width: 100%;
+        }
+
+        /* Nearest Bull Modal */
+        .nearest-bull-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: var(--space-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            max-width: 400px;
+            width: calc(100% - var(--space-md) * 2);
+            margin: var(--space-md);
+            animation: scaleIn 0.4s ease;
+        }
+
+        .bull-instruction {
+            font-size: 1.1rem;
+            margin-bottom: var(--space-md);
+            color: var(--text-secondary);
+        }
+
+        .bull-player-name {
+            font-weight: 700;
+            color: var(--theme-primary);
+        }
+
+        .bull-board-container {
+            max-width: 280px;
+            margin: 0 auto var(--space-md);
+        }
+
+        .bull-throws {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            justify-content: center;
+            margin-bottom: var(--space-md);
+            min-height: 40px;
+        }
+
+        .bull-throw-item {
+            padding: var(--space-xs) var(--space-sm);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+        }
+
+        .bull-throw-item.winner {
+            background: var(--theme-primary);
+            color: white;
+        }
+
+        .bull-winner {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--theme-primary);
+            min-height: 1.5rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .bull-start-btn {
+            width: 100%;
+        }
+
         @media (min-width: 768px) {
             .game-over-content {
                 padding: var(--space-xl) calc(var(--space-xl) * 2);
@@ -2847,6 +3010,15 @@
                         <div class="section-title">👥 Players</div>
                         <div class="players-list" id="playersList"></div>
                         <button class="add-btn" id="addPlayerBtn">+ Add Player</button>
+                    </div>
+
+                    <div class="setup-section glass-solid">
+                        <div class="section-title">🎲 Who Throws First?</div>
+                        <div class="option-row" id="firstThrowOpts">
+                            <button class="option-btn selected" data-val="p1">Player 1</button>
+                            <button class="option-btn" data-val="coin">Coin Toss</button>
+                            <button class="option-btn" data-val="bull">Nearest Bull</button>
+                        </div>
                     </div>
 
                     <div class="setup-actions">
@@ -3293,6 +3465,45 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- Coin Toss Modal -->
+    <div class="modal" id="coinTossModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass-solid coin-toss-content">
+            <div class="modal-title">Coin Toss</div>
+            <div class="coin-container">
+                <div class="coin" id="coin">
+                    <div class="coin-face coin-heads">H</div>
+                    <div class="coin-face coin-tails">T</div>
+                </div>
+            </div>
+            <div class="coin-result" id="coinResult"></div>
+            <div class="coin-winner" id="coinWinner"></div>
+            <div class="coin-actions">
+                <button class="action-btn secondary" id="coinHeadsBtn">Heads</button>
+                <button class="action-btn secondary" id="coinTailsBtn">Tails</button>
+            </div>
+            <button class="action-btn primary coin-start-btn" id="coinStartBtn" style="display:none">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Nearest Bull Modal -->
+    <div class="modal" id="nearestBullModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass-solid nearest-bull-content">
+            <div class="modal-title">Nearest to Bull</div>
+            <div class="bull-instruction" id="bullInstruction">
+                <span class="bull-player-name" id="bullCurrentPlayer">Player 1</span>
+                <span class="bull-text">throw at the bull!</span>
+            </div>
+            <div class="bull-board-container">
+                <svg class="dartboard-svg" viewBox="0 0 400 400" id="bullBoardSvg"></svg>
+            </div>
+            <div class="bull-throws" id="bullThrows"></div>
+            <div class="bull-winner" id="bullWinner"></div>
+            <button class="action-btn primary bull-start-btn" id="bullStartBtn" style="display:none">Start Game</button>
+        </div>
+    </div>
+
     <script>
     // =====================================================
     // TUNGSTEN - ULTIMATE DARTS COMPANION
@@ -3630,7 +3841,7 @@
             checkoutHit: 0, checkoutAtt: 0,
             first9Total: 0, first9Legs: 0
         },
-        setup: { type: 501, out: 'double', legs: 1, sets: 1, players: ['Player 1', 'Player 2'] },
+        setup: { type: 501, out: 'double', legs: 1, sets: 1, players: ['Player 1', 'Player 2'], firstThrow: 'p1' },
         game: null,
         practice: null,
         multiplier: 1,
@@ -3639,7 +3850,9 @@
         fsInputMode: 'board',
         fsMultiplier: 1,
         fsNumpadVal: '',
-        turnCheckout: null // Track the checkout route for current turn
+        turnCheckout: null, // Track the checkout route for current turn
+        coinToss: null, // Track coin toss state
+        nearestBull: null // Track nearest bull state
     };
 
     // ===== INIT =====
@@ -3652,6 +3865,7 @@
             generateDartboard('dartboardSvg', handleGameThrow);
             generateDartboard('practiceBoardSvg', handlePracticeThrow);
             generateDartboard('fsBoardSvg', handleFsThrow);
+            generateDartboard('bullBoardSvg', handleBullThrow);
             generateDartsGrid();
             generateQuickGrid();
             generateNumpad();
@@ -3699,6 +3913,7 @@
                 if (data.setup.out) app.setup.out = data.setup.out;
                 if (data.setup.legs) app.setup.legs = data.setup.legs;
                 if (data.setup.sets) app.setup.sets = data.setup.sets;
+                if (data.setup.firstThrow) app.setup.firstThrow = data.setup.firstThrow;
                 if (data.setup.players && data.setup.players.length > 0) {
                     app.setup.players = data.setup.players;
                 }
@@ -3715,6 +3930,7 @@
                 out: app.setup.out,
                 legs: app.setup.legs,
                 sets: app.setup.sets,
+                firstThrow: app.setup.firstThrow,
                 players: app.setup.players
             }
         }));
@@ -4004,10 +4220,28 @@
         document.querySelectorAll('#setsOpts .option-btn').forEach(b => {
             b.classList.toggle('selected', +b.dataset.val === app.setup.sets);
         });
+        // First throw
+        document.querySelectorAll('#firstThrowOpts .option-btn').forEach(b => {
+            b.classList.toggle('selected', b.dataset.val === app.setup.firstThrow);
+        });
     }
 
     // ===== GAME =====
     function startGame() {
+        // Check if we need to determine first thrower
+        if (app.setup.firstThrow === 'coin') {
+            openCoinToss();
+            return;
+        } else if (app.setup.firstThrow === 'bull') {
+            openNearestBull();
+            return;
+        }
+
+        // Start with player 1 (index 0)
+        initializeGame(0);
+    }
+
+    function initializeGame(startingPlayerIndex) {
         app.game = {
             type: app.setup.type,
             out: app.setup.out,
@@ -4029,21 +4263,185 @@
                 checkoutAtt: 0,
                 checkoutHit: 0
             })),
-            current: 0,
+            current: startingPlayerIndex,
             throws: [],
             leg: 1,
             set: 1,
             history: [],
-            startingPlayer: 0
+            startingPlayer: startingPlayerIndex
         };
-        
+
         updateGameUI();
         navigate('game');
-        
+
         // Auto-fullscreen on mobile/small screens
         if (app.settings.autoFullscreen && window.innerHeight < 700) {
             setTimeout(openFullscreen, 100);
         }
+    }
+
+    // ===== COIN TOSS =====
+    function openCoinToss() {
+        app.coinToss = {
+            playerChoice: null,
+            result: null,
+            winner: null
+        };
+
+        // Reset UI
+        document.getElementById('coin').className = 'coin';
+        document.getElementById('coinResult').textContent = '';
+        document.getElementById('coinWinner').textContent = `${app.setup.players[0]}, pick heads or tails:`;
+        document.getElementById('coinStartBtn').style.display = 'none';
+        document.getElementById('coinHeadsBtn').style.display = '';
+        document.getElementById('coinTailsBtn').style.display = '';
+
+        document.getElementById('coinTossModal').classList.add('open');
+    }
+
+    function flipCoin(playerChoice) {
+        if (app.coinToss.result !== null) return; // Already flipped
+
+        app.coinToss.playerChoice = playerChoice;
+
+        // Hide choice buttons
+        document.getElementById('coinHeadsBtn').style.display = 'none';
+        document.getElementById('coinTailsBtn').style.display = 'none';
+        document.getElementById('coinWinner').textContent = 'Flipping...';
+
+        // Random result
+        const result = Math.random() < 0.5 ? 'heads' : 'tails';
+        app.coinToss.result = result;
+
+        // Animate coin
+        const coin = document.getElementById('coin');
+        coin.className = 'coin flipping' + (result === 'tails' ? ' to-tails' : '');
+
+        haptic();
+
+        // Show result after animation
+        setTimeout(() => {
+            document.getElementById('coinResult').textContent = result.toUpperCase() + '!';
+
+            // Determine winner
+            const p1Won = (playerChoice === result);
+            app.coinToss.winner = p1Won ? 0 : 1;
+
+            const winnerName = app.setup.players[app.coinToss.winner];
+            document.getElementById('coinWinner').textContent = `${winnerName} throws first!`;
+            document.getElementById('coinStartBtn').style.display = '';
+        }, 2000);
+    }
+
+    function closeCoinToss() {
+        document.getElementById('coinTossModal').classList.remove('open');
+        if (app.coinToss && app.coinToss.winner !== null) {
+            initializeGame(app.coinToss.winner);
+        }
+        app.coinToss = null;
+    }
+
+    // ===== NEAREST BULL =====
+    function openNearestBull() {
+        app.nearestBull = {
+            currentPlayer: 0,
+            throws: [], // Array of {playerIndex, value, mult, distance}
+            winner: null
+        };
+
+        updateNearestBullUI();
+        document.getElementById('nearestBullModal').classList.add('open');
+    }
+
+    function updateNearestBullUI() {
+        const nb = app.nearestBull;
+        if (!nb) return;
+
+        const playerName = app.setup.players[nb.currentPlayer];
+        document.getElementById('bullCurrentPlayer').textContent = playerName;
+
+        // Show throws
+        const throwsHtml = nb.throws.map(t => {
+            const isWinner = nb.winner !== null && t.playerIndex === nb.winner;
+            return `<div class="bull-throw-item ${isWinner ? 'winner' : ''}">${app.setup.players[t.playerIndex]}: ${t.label}</div>`;
+        }).join('');
+        document.getElementById('bullThrows').innerHTML = throwsHtml;
+
+        // Show winner or instruction
+        if (nb.winner !== null) {
+            document.getElementById('bullInstruction').style.display = 'none';
+            document.getElementById('bullWinner').textContent = `${app.setup.players[nb.winner]} throws first!`;
+            document.getElementById('bullStartBtn').style.display = '';
+        } else {
+            document.getElementById('bullInstruction').style.display = '';
+            document.getElementById('bullWinner').textContent = '';
+            document.getElementById('bullStartBtn').style.display = 'none';
+        }
+    }
+
+    function handleBullThrow(seg) {
+        const nb = app.nearestBull;
+        if (!nb || nb.winner !== null) return;
+
+        const value = +seg.dataset.value;
+        const mult = +seg.dataset.mult;
+
+        // Calculate distance from bull (25 is bull center)
+        // Bull = 0, 25 outer = 1, then by segment number distance
+        let distance;
+        let label;
+
+        if (value === 25 && mult === 2) {
+            distance = 0; // Bullseye
+            label = 'BULL';
+        } else if (value === 25 && mult === 1) {
+            distance = 1; // Outer bull
+            label = '25';
+        } else {
+            // Other segments - higher number = further from bull conceptually
+            // Use a simple scoring: single = value, double = value, treble = value
+            // But for distance, we'll use board position
+            distance = 2 + (20 - value); // Closer to 20 = better
+            const prefix = mult === 3 ? 'T' : mult === 2 ? 'D' : '';
+            label = prefix + value;
+        }
+
+        nb.throws.push({
+            playerIndex: nb.currentPlayer,
+            value,
+            mult,
+            distance,
+            label
+        });
+
+        haptic();
+
+        // Move to next player
+        nb.currentPlayer++;
+
+        // Check if all players have thrown
+        if (nb.currentPlayer >= app.setup.players.length) {
+            // Determine winner (lowest distance)
+            let minDistance = Infinity;
+            let winnerIndex = 0;
+            nb.throws.forEach(t => {
+                if (t.distance < minDistance) {
+                    minDistance = t.distance;
+                    winnerIndex = t.playerIndex;
+                }
+            });
+            nb.winner = winnerIndex;
+        }
+
+        updateNearestBullUI();
+    }
+
+    function closeNearestBull() {
+        document.getElementById('nearestBullModal').classList.remove('open');
+        if (app.nearestBull && app.nearestBull.winner !== null) {
+            initializeGame(app.nearestBull.winner);
+        }
+        app.nearestBull = null;
     }
 
     function updateGameUI() {
@@ -5144,7 +5542,7 @@
         });
         
         // Setup options
-        ['gameTypeOpts', 'outModeOpts', 'legsOpts', 'setsOpts'].forEach(id => {
+        ['gameTypeOpts', 'outModeOpts', 'legsOpts', 'setsOpts', 'firstThrowOpts'].forEach(id => {
             document.getElementById(id)?.addEventListener('click', e => {
                 if (e.target.classList.contains('option-btn')) {
                     e.currentTarget.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
@@ -5154,6 +5552,7 @@
                     else if (id === 'outModeOpts') app.setup.out = val;
                     else if (id === 'legsOpts') app.setup.legs = +val;
                     else if (id === 'setsOpts') app.setup.sets = +val;
+                    else if (id === 'firstThrowOpts') app.setup.firstThrow = val;
                     saveData(); // Persist setup changes
                 }
             });
@@ -5541,6 +5940,14 @@
                 else navigate('home');
             });
         });
+
+        // Coin toss
+        document.getElementById('coinHeadsBtn').addEventListener('click', () => flipCoin('heads'));
+        document.getElementById('coinTailsBtn').addEventListener('click', () => flipCoin('tails'));
+        document.getElementById('coinStartBtn').addEventListener('click', closeCoinToss);
+
+        // Nearest bull
+        document.getElementById('bullStartBtn').addEventListener('click', closeNearestBull);
     }
 
     document.addEventListener('DOMContentLoaded', init);
