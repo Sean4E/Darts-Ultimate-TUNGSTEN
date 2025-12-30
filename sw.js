@@ -1,4 +1,4 @@
-const CACHE_NAME = 'deano-v5';
+const CACHE_NAME = 'deano-v6';
 const ASSETS = [
   './',
   './index.html',
