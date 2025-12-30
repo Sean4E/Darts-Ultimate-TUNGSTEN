@@ -1,10 +1,11 @@
 const CACHE_NAME = 'tungsten-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './icon.svg'
 ];
 
 // Install service worker and cache assets
@@ -46,7 +47,7 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => {
       // Offline fallback
       if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
+        return caches.match('./index.html');
       }
     })
   );

@@ -2,7 +2,8 @@
   "name": "Tungsten - Ultimate Darts Companion",
   "short_name": "Tungsten",
   "description": "The ultimate darts scoring app with practice modes, checkout charts, and detailed statistics",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#ff6b35",
@@ -27,13 +28,13 @@
       "name": "Quick 501",
       "short_name": "Quick Game",
       "description": "Start a quick 501 game",
-      "url": "/?action=quick-game"
+      "url": "./?action=quick-game"
     },
     {
       "name": "Practice",
       "short_name": "Practice",
       "description": "Open practice modes",
-      "url": "/?screen=practice"
+      "url": "./?screen=practice"
     }
   ]
 }
