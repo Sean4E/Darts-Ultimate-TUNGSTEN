@@ -523,6 +523,48 @@
             font-size: 8px;
         }
 
+        /* Player-specific colors using gradient theme colors */
+        .player-card.player-0.active {
+            box-shadow: 0 0 0 2px var(--theme-primary);
+        }
+        .player-card.player-0.active::after {
+            color: var(--theme-primary);
+        }
+        .player-card.player-0.active .player-score-main {
+            color: var(--theme-primary);
+        }
+
+        .player-card.player-1.active {
+            box-shadow: 0 0 0 2px var(--theme-secondary);
+        }
+        .player-card.player-1.active::after {
+            color: var(--theme-secondary);
+        }
+        .player-card.player-1.active .player-score-main {
+            color: var(--theme-secondary);
+        }
+
+        /* For 3+ players, alternate between primary and secondary */
+        .player-card.player-2.active {
+            box-shadow: 0 0 0 2px var(--theme-primary);
+        }
+        .player-card.player-2.active::after {
+            color: var(--theme-primary);
+        }
+        .player-card.player-2.active .player-score-main {
+            color: var(--theme-primary);
+        }
+
+        .player-card.player-3.active {
+            box-shadow: 0 0 0 2px var(--theme-secondary);
+        }
+        .player-card.player-3.active::after {
+            color: var(--theme-secondary);
+        }
+        .player-card.player-3.active .player-score-main {
+            color: var(--theme-secondary);
+        }
+
         .player-name {
             font-size: 0.6rem;
             color: var(--text-muted);
@@ -1151,6 +1193,22 @@
         .fs-player-panel.active {
             border-color: var(--theme-primary);
             background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(0,212,170,0.05));
+        }
+
+        /* Player 0 (left) uses primary color */
+        .fs-player-panel.player-0.active {
+            border-color: var(--theme-primary);
+        }
+        .fs-player-panel.player-0.active .fs-player-score {
+            color: var(--theme-primary);
+        }
+
+        /* Player 1 (right) uses secondary color */
+        .fs-player-panel.player-1.active {
+            border-color: var(--theme-secondary);
+        }
+        .fs-player-panel.player-1.active .fs-player-score {
+            color: var(--theme-secondary);
         }
 
         .fs-player-panel.right {
@@ -2779,7 +2837,7 @@
             border-radius: 50%;
             border: 4px solid rgba(255,255,255,0.8);
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            overflow: hidden;
+            overflow: visible;
             pointer-events: none;
             z-index: 9999;
             background: #1a1a1a;
@@ -2793,21 +2851,24 @@
         .magnifier-loupe svg {
             width: 100%;
             height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
         }
 
         .magnifier-info {
             position: absolute;
-            bottom: -32px;
+            bottom: -36px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--bg-secondary);
+            background: rgba(10, 10, 15, 0.95);
             padding: 6px 14px;
             border-radius: var(--radius-md);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 700;
             white-space: nowrap;
             border: 2px solid currentColor;
             transition: color 0.1s, border-color 0.1s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
         .magnifier-info.single { color: #f5f0dc; }
@@ -4783,7 +4844,7 @@
         document.getElementById('scoreBar').innerHTML = g.players.map((p, i) => {
             const avg = p.darts > 0 ? ((p.totalScore / p.darts) * 3).toFixed(2) : '0.00';
             return `
-            <div class="player-card ${i === g.current ? 'active' : ''}">
+            <div class="player-card player-${i % 4} ${i === g.current ? 'active' : ''}">
                 <div class="player-name">${p.name}</div>
                 <div class="player-score-main">${p.score}</div>
                 <div class="player-avg">Avg: ${avg}</div>
@@ -5345,8 +5406,9 @@
         g.players.slice(0, 2).forEach((p, i) => {
             const panel = document.getElementById(`fsPlayer${i}`);
             if (!panel) return;
-            
-            panel.classList.toggle('active', i === g.current);
+
+            // Add player color class and toggle active
+            panel.className = `fs-player-panel player-${i} ${i === 1 ? 'right' : ''} ${i === g.current ? 'active' : ''}`;
             
             const avg = p.darts > 0 ? ((p.totalScore / p.darts) * 3).toFixed(1) : '0.0';
             const route = getCheckoutRoute(p.score, app.settings.checkoutPref);
