@@ -1,7 +1,7 @@
 {
-  "name": "Tungsten - Ultimate Darts Companion",
-  "short_name": "Tungsten",
-  "description": "The ultimate darts scoring app with practice modes, checkout charts, and detailed statistics",
+  "name": "D.E.A.N.O - Darts Education & Analytics for Next-level Outcomes",
+  "short_name": "D.E.A.N.O",
+  "description": "D.E.A.N.O - The ultimate darts scoring app with practice modes, checkout charts, and detailed statistics",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
