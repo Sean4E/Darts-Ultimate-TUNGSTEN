@@ -5658,10 +5658,8 @@
         switch (p.mode) {
             case 'doubles':
             case 'trebles':
-            case 'around':
                 const tgt = p.sequence[p.index];
-                const neededMult = p.mode === 'around' ? 1 : tgt.mult;
-                if (value === tgt.value && mult >= neededMult) {
+                if (value === tgt.value && mult >= tgt.mult) {
                     p.hits++;
                     p.index++;
                     toast('HIT! ✓', 'success');
@@ -5672,7 +5670,27 @@
                     }
                 }
                 break;
-                
+
+            case 'around':
+                const aroundTgt = p.sequence[p.index];
+                if (value === aroundTgt.value) {
+                    p.hits++;
+                    // Advance by multiplier (single=1, double=2, treble=3)
+                    const advance = mult;
+                    p.index += advance;
+                    if (advance > 1) {
+                        toast(`+${advance}! ✓`, 'success');
+                    } else {
+                        toast('HIT! ✓', 'success');
+                    }
+                    if (p.index >= p.sequence.length) {
+                        toast(`Complete! ${p.darts} darts`, 'success');
+                        setTimeout(() => startPractice(p.mode), 1500);
+                        return;
+                    }
+                }
+                break;
+
             case 'checkout':
                 p.remaining -= score;
                 if (p.remaining === 0 && mult === 2) {
@@ -5810,10 +5828,8 @@
         switch (p.mode) {
             case 'doubles':
             case 'trebles':
-            case 'around':
-                const tgt = p.sequence[p.index];
-                const neededMult = p.mode === 'around' ? 1 : tgt.mult;
-                if (value === tgt.value && mult >= neededMult) {
+                const tgt2 = p.sequence[p.index];
+                if (value === tgt2.value && mult >= tgt2.mult) {
                     p.hits++;
                     p.index++;
                     toast('HIT! ✓', 'success');
@@ -5824,7 +5840,27 @@
                     }
                 }
                 break;
-                
+
+            case 'around':
+                const aroundTgt2 = p.sequence[p.index];
+                if (value === aroundTgt2.value) {
+                    p.hits++;
+                    // Advance by multiplier (single=1, double=2, treble=3)
+                    const advance2 = mult;
+                    p.index += advance2;
+                    if (advance2 > 1) {
+                        toast(`+${advance2}! ✓`, 'success');
+                    } else {
+                        toast('HIT! ✓', 'success');
+                    }
+                    if (p.index >= p.sequence.length) {
+                        toast(`Complete! ${p.darts} darts`, 'success');
+                        resetPractice();
+                        return;
+                    }
+                }
+                break;
+
             case 'checkout':
                 p.remaining -= score;
                 if (p.remaining === 0 && mult === 2) {
